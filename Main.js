@@ -8,7 +8,7 @@ import {StartBtn} from "./js/player/StartBtn.js";
 
 export class Main {
     constructor() {
-        this.canvas = document.getElementById('game_canvas');
+        this.canvas = wx.createCanvas();
         this.ctx =this.canvas.getContext('2d');
         this.dataStore = DataStore.getInstance();
         const loader = ResourceLoader.create();
@@ -21,8 +21,8 @@ export class Main {
         this.dataStore.ctx = this.ctx;
         this.dataStore.res = map;
         this.dataStore.win = {
-            innerWidth: window.innerWidth,
-            innerHeight: window.innerHeight
+            innerWidth: this.canvas.width,
+            innerHeight: this.canvas.height
         };
         this.director = Director.getInstance();
         this.init();
@@ -59,9 +59,17 @@ export class Main {
     }
 
     registerEvent() {
-        this.canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            //console.log(this.director.isGameOver);
+        // this.canvas.addEventListener('touchstart', e => {
+        //     e.preventDefault();
+        //     //console.log(this.director.isGameOver);
+        //     if(this.director.isGameOver) {
+        //         //this.init();
+        //         this.director.checkClickStartBtn(e)
+        //     } else {
+        //         this.director.ballEventStart(e);
+        //     }
+        // });
+        wx.onTouchStart((e) => {
             if(this.director.isGameOver) {
                 //this.init();
                 this.director.checkClickStartBtn(e)
@@ -69,17 +77,24 @@ export class Main {
                 this.director.ballEventStart(e);
             }
         });
-        this.canvas.addEventListener('touchend', e => {
-            e.preventDefault();
+        // this.canvas.addEventListener('touchend', e => {
+        //     e.preventDefault();
+        //     if(this.director.isGameOver) {
+        //         //this.init();
+        //     } else {
+        //         this.director.ballEventEnd(e);
+        //     }
+        // });
+        wx.onTouchEnd((e) => {
             if(this.director.isGameOver) {
                 //this.init();
             } else {
                 this.director.ballEventEnd(e);
             }
         });
-        this.canvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            //console.log(1);
-        })
+        // this.canvas.addEventListener('touchmove', e => {
+        //     e.preventDefault();
+        //     //console.log(1);
+        // })
     }
 }
