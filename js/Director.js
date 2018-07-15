@@ -4,6 +4,7 @@ import {Cloud} from "./runtime/Cloud.js";
 import {Tools} from "./base/Tools.js";
 import {Step} from "./runtime/Step.js";
 import {Ball} from "./player/Ball.js";
+import {Main} from "../Main.js";
 
 export class Director {
     constructor() {
@@ -25,12 +26,30 @@ export class Director {
         // 初始化小球移动速度
         this.dataStore.ballSpeed = {
             x: 0,
-            y: 0
+            y: 1
         };
         //初始化触摸状态
         this.dataStore.isTouch = false;
         //初始化触摸位置
         this.dataStore.isLeft = true;
+
+        //计数器
+        this.dataStore.darwNum = 0;
+
+        //是否固定小球位置
+        this.dataStore.isBallFixed = false;
+
+        //开始按钮宽高
+        this.dataStore.startBtn = {
+            w: this.dataStore.win.innerWidth / 3,
+            h: this.dataStore.win.innerWidth / 3 / 2,
+            x: this.dataStore.win.innerWidth,
+            y: (this.dataStore.win.innerHeight - (this.dataStore.win.innerWidth / 3 / 2)) / 2,
+            minX: (this.dataStore.win.innerWidth - (this.dataStore.win.innerWidth / 3)) / 2,
+            maxX: this.dataStore.win.innerWidth
+        };
+        //开始按钮移入速度
+        this.dataStore.startBtnSpeed = 10;
     }
 
     static getInstance() {
@@ -56,15 +75,47 @@ export class Director {
     // 初始化小球
     initBall() {
         const initX = (this.dataStore.win.innerWidth - this.ballSize) / 2;
+        //console.log(initX);
         const initY = this.dataStore.win.innerHeight - this.stepHeight - this.stepInterval - this.ballSize;
+        // console.log('初始化小球X:',initX,'Y:',initY);
         return new Ball(initX, initY);
+    }
+
+    restartInit() {
+        // 清空台阶
+        this.dataStore.del('steps');
+        // 清空小球
+        this.dataStore.del('ball');
+
+        //初始化小球
+        let Ball = this.initBall();
+        this.dataStore.put('steps', [])
+            .put('ball', Ball);
+        // 初始化台阶
+        this.initStep();
+
+        // 初始化小球移动速度
+        this.dataStore.ballSpeed = {
+            x: 0,
+            y: 1
+        };
+        //初始化触摸状态
+        this.dataStore.isTouch = false;
+        //初始化触摸位置
+        this.dataStore.isLeft = true;
+
+        //计数器
+        this.dataStore.darwNum = 0;
+
+        //是否固定小球位置
+        this.dataStore.isBallFixed = false;
     }
 
     // 小球事件
     ballEventStart(event) {
         let touchX = event.touches[0].clientX;
         // 判断触摸的是左边还是右边
-        let compare = (this.dataStore.win.innerWidth - 30) / 2;
+        let compare = (this.dataStore.win.innerWidth - 10) / 2;
         // 更改触摸状态
         this.dataStore.isTouch = true;
         if(touchX < compare) {
@@ -83,6 +134,24 @@ export class Director {
         // 更改触摸状态
         this.dataStore.isTouch = false;
         //触摸离开后进入缓冲运动，x的绝对值逐渐变小直至为零
+    }
+
+    // 检测是否点击了开始按钮
+    checkClickStartBtn(event) {
+        let touchX = event.touches[0].clientX;
+        let touchY = event.touches[0].clientY;
+
+        if( touchX > this.dataStore.startBtn.minX && 
+            touchX < this.dataStore.startBtn.maxX && 
+            touchY > this.dataStore.startBtn.y && 
+            touchY < (this.dataStore.startBtn.y + this.dataStore.startBtn.h)
+        ) {
+            console.log('点击了');
+            // 开始游戏
+            this.isGameOver = false;
+            this.dataStore.startBtnSpeed = -10;
+        }
+
     }
 
     // 小球加速
@@ -111,59 +180,6 @@ export class Director {
         }
     }
 
-    // 检测小球是否在台阶上
-    checkBallByStep() {
-        const ball = this.dataStore.get('ball');
-        const steps = this.dataStore.get('steps');
-        // 小球的边框模型
-        const ballBorder = {
-            top: ball.y,
-            bottom: ball.y + this.ballSize,
-            left: ball.x,
-            right: ball.x + this.ballSize
-        };
-        const length = steps.length;
-        for(let i=0; i<length; i++) {
-            const step = steps[i];
-            const stepBorder = {
-                top: step.y,
-                bottom: step.y + step.height,
-                left: step.x,
-                right: step.x + step.width
-            };
-            if(ballBorder.top > stepBorder.bottom) {
-                continue;
-            }
-            if(Director.isStrike(ballBorder, stepBorder)){
-                //console.log('在台阶上');
-                //console.log(this.stepSpeed);
-                this.dataStore.ballSpeed.y = this.stepSpeed;
-                this.dataStore.get('ball').time = 0;
-            } else {
-                //console.log(this.dataStore.ballSpeed.y);
-                this.dataStore.ballSpeed.y = 0;
-            }
-            return;
-        }
-    }
-
-    //判断小球是否在台阶上
-    static isStrike(ball, step) {
-        //console.log('ball:', ball);
-        //console.log('step:', step);
-        // 判断小球与台阶之间的纵向距离
-        let s = false;
-        if(step.top - ball.bottom > 1) {
-            s = false;
-            return s;
-        } else {
-            if (  ball.left <= step.right && ball.right >=  step.left) {
-                s = true;
-            }
-        }
-        return s;
-    }
-
     createCloud(initDistance = 0) {
         const  minTop = this.dataStore.win.innerHeight/3;
         const  maxTop = this.dataStore.win.innerHeight;
@@ -178,8 +194,38 @@ export class Director {
         }
     }
 
+    checkGameOver() {
+        const ball = this.dataStore.get('ball');
+        // 当小球的Y坐标超过上下屏幕边缘即为游戏结束
+        // console.log(ball.y);
+        // console.log(ball.x);
+        if(ball.y < 0 || ball.y > this.dataStore.win.innerHeight){
+            this.isGameOver = true;
+            this.dataStore.isBallFixed = true;
+            this.dataStore.startBtnSpeed = 10;
+
+            this.restartInit();
+
+            // this.dataStore.canvas.removeEventListener('touchstart', e => {
+            //     console.log('移除事件touchstart');
+            // });
+            // this.dataStore.canvas.removeEventListener('touchend', e => {
+            //     console.log('移除事件touchend');
+            // });
+            // cancelAnimationFrame(this.dataStore.get('timer'));
+            // this.dataStore.destroy();
+            
+            // // 先设置cavas标签高宽
+            // var canvas = document.getElementById("game_canvas");
+            // canvas.setAttribute('width',window.innerWidth);
+            // canvas.setAttribute('height',window.innerHeight);
+
+            // new Main();
+        }
+    }
+
     run() {
-        this.checkBallByStep();
+        this.checkGameOver();
         if(this.dataStore.isTouch) {
             this.ballQuicken();
         } else {
@@ -217,9 +263,14 @@ export class Director {
         // 画出小球
         this.dataStore.get('ball').draw();
 
+        // 画出开始按钮
+        this.dataStore.get('startBtn').draw();
+
         if(!this.isGameOver) {
             this.stepSpeed = 1;
-
+            this.dataStore.ballSpeed.y = 1;
+        }else{
+            this.stepSpeed = 0;
         }
         let timer = requestAnimationFrame(()=> this.run());
         this.dataStore.put('timer', timer);

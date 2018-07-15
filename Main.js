@@ -3,7 +3,7 @@ import {ResourceLoader} from "./js/base/ResourceLoader.js";
 import {Director} from "./js/Director.js";
 import {BackGround} from "./js/runtime/BackGround.js";
 import {DataStore} from "./js/base/DataStore.js";
-//import {Ball} from "./js/player/Ball.js";
+import {StartBtn} from "./js/player/StartBtn.js";
 //import {Tools} from "./js/base/Tools.js";
 
 export class Main {
@@ -17,6 +17,7 @@ export class Main {
     }
 
     onResourceFirstLoaded(map) {
+        this.dataStore.canvas = this.canvas;
         this.dataStore.ctx = this.ctx;
         this.dataStore.res = map;
         this.dataStore.win = {
@@ -29,8 +30,10 @@ export class Main {
 
     init() {
 
+        console.log('初始化');
+
         // 重置游戏正常执行
-        this.director.isGameOver = false;
+        this.director.isGameOver = true;
 
         //初始化小球
         let Ball = this.director.initBall();
@@ -39,7 +42,8 @@ export class Main {
             .put('background', BackGround)
             .put('clouds', [])
             .put('steps', [])
-            .put('ball', Ball);
+            .put('ball', Ball)
+            .put('startBtn', StartBtn);
 
         // 要在游戏逻辑之前创建
         this.director.createCloud();
@@ -57,8 +61,10 @@ export class Main {
     registerEvent() {
         this.canvas.addEventListener('touchstart', e => {
             e.preventDefault();
+            //console.log(this.director.isGameOver);
             if(this.director.isGameOver) {
-                this.init();
+                //this.init();
+                this.director.checkClickStartBtn(e)
             } else {
                 this.director.ballEventStart(e);
             }
@@ -66,14 +72,14 @@ export class Main {
         this.canvas.addEventListener('touchend', e => {
             e.preventDefault();
             if(this.director.isGameOver) {
-                this.init();
+                //this.init();
             } else {
                 this.director.ballEventEnd(e);
             }
         });
         this.canvas.addEventListener('touchmove', e => {
             e.preventDefault();
-            console.log(1);
+            //console.log(1);
         })
     }
 }

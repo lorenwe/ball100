@@ -24,6 +24,10 @@ export class DataStore {
         return this.map.get(key);
     }
 
+    del(key) {
+        return this.map.delete(key);
+    }
+
     destroy() {
         for(let value of this.map.values()) {
             value = null;
