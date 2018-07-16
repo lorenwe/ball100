@@ -4,11 +4,13 @@ import {Director} from "./js/Director.js";
 import {BackGround} from "./js/runtime/BackGround.js";
 import {DataStore} from "./js/base/DataStore.js";
 import {StartBtn} from "./js/player/StartBtn.js";
-//import {Tools} from "./js/base/Tools.js";
+import {BallCanvas} from "./js/player/BallCanvas.js";
+import {Score} from "./js/player/Score.js";
 
 export class Main {
     constructor() {
         this.canvas = wx.createCanvas();
+        // this.canvas = document.getElementById('game_canvas');
         this.ctx =this.canvas.getContext('2d');
         this.dataStore = DataStore.getInstance();
         const loader = ResourceLoader.create();
@@ -25,12 +27,24 @@ export class Main {
             innerHeight: this.canvas.height
         };
         this.director = Director.getInstance();
+        this.dataStore.ballCanvas = BallCanvas.getInstance();
         this.init();
+    }
+
+    // 播放背景音乐
+    backgroundMusic() {
+        let bgm = wx.createInnerAudioContext();
+        bgm.autoplay = true;
+        bgm.loop = true;
+        bgm.src = 'res/audio/bgmusic.mp3';
+        this.dataStore.bgm = bgm;
     }
 
     init() {
 
         console.log('初始化');
+
+        this.backgroundMusic();
 
         // 重置游戏正常执行
         this.director.isGameOver = true;
@@ -43,6 +57,7 @@ export class Main {
             .put('clouds', [])
             .put('steps', [])
             .put('ball', Ball)
+            .put('score', Score)
             .put('startBtn', StartBtn);
 
         // 要在游戏逻辑之前创建
@@ -92,9 +107,5 @@ export class Main {
                 this.director.ballEventEnd(e);
             }
         });
-        // this.canvas.addEventListener('touchmove', e => {
-        //     e.preventDefault();
-        //     //console.log(1);
-        // })
     }
 }

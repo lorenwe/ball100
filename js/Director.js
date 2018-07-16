@@ -28,6 +28,13 @@ export class Director {
             x: 0,
             y: 1
         };
+        //计分板位置
+        this.dataStore.scorePanel = {
+            w: this.dataStore.win.innerWidth / 4.2,
+            h: this.dataStore.win.innerWidth / 4.2 / 3.8,
+            x: this.dataStore.win.innerWidth / 18.75,
+            y: this.dataStore.win.innerWidth / 17
+        };
         //初始化触摸状态
         this.dataStore.isTouch = false;
         //初始化触摸位置
@@ -35,6 +42,8 @@ export class Director {
 
         //计数器
         this.dataStore.darwNum = 0;
+        //累计台阶个数
+        this.dataStore.stepNum = 0;
 
         //是否固定小球位置
         this.dataStore.isBallFixed = false;
@@ -50,6 +59,16 @@ export class Director {
         };
         //开始按钮移入速度
         this.dataStore.startBtnSpeed = 10;
+        //右边台阶检查偏差值
+        this.dataStore.rightStepCeil = this.dataStore.win.innerWidth / 80;
+        //左边台阶检查偏差值
+        this.dataStore.leftStepCeil = this.dataStore.win.innerWidth / 65;
+
+        //字体
+        this.dataStore.fontFamily = wx.loadFont('res/font/Happy_brown_cat_shadow.ttf');
+
+        //是否播放背景音乐
+        this.dataStore.bgMusic = true;
     }
 
     static getInstance() {
@@ -62,14 +81,15 @@ export class Director {
     createStep() {
         const initX = (this.dataStore.win.innerWidth - this.stepWidth) * (Tools.randomFrom(0,100) / 100);
         const initY = this.dataStore.win.innerHeight;
-        this.dataStore.get('steps').push(new Step(initX, initY));
+        //console.log(this.stepWidth);
+        this.dataStore.get('steps').push(new Step(initX, initY, this.dataStore.stepNum));
     }
 
     // 初始化第一个台阶
-    initStep() {
+    initStep(stepNum = 0) {
         const initX = (this.dataStore.win.innerWidth - this.stepWidth) / 2;
         const initY = this.dataStore.win.innerHeight - this.stepHeight - this.stepInterval;
-        this.dataStore.get('steps').push(new Step(initX, initY));
+        this.dataStore.get('steps').push(new Step(initX, initY, stepNum));
     }
 
     // 初始化小球
@@ -106,6 +126,10 @@ export class Director {
 
         //计数器
         this.dataStore.darwNum = 0;
+        //累计台阶个数
+        this.dataStore.stepNum = 0;
+        //得分
+        this.dataStore.score = 0;
 
         //是否固定小球位置
         this.dataStore.isBallFixed = false;
@@ -150,6 +174,7 @@ export class Director {
             // 开始游戏
             this.isGameOver = false;
             this.dataStore.startBtnSpeed = -10;
+            this.dataStore.bgm.pause();
         }
 
     }
@@ -197,30 +222,12 @@ export class Director {
     checkGameOver() {
         const ball = this.dataStore.get('ball');
         // 当小球的Y坐标超过上下屏幕边缘即为游戏结束
-        // console.log(ball.y);
-        // console.log(ball.x);
         if(ball.y < 0 || ball.y > this.dataStore.win.innerHeight){
             this.isGameOver = true;
             this.dataStore.isBallFixed = true;
             this.dataStore.startBtnSpeed = 10;
 
             this.restartInit();
-
-            // this.dataStore.canvas.removeEventListener('touchstart', e => {
-            //     console.log('移除事件touchstart');
-            // });
-            // this.dataStore.canvas.removeEventListener('touchend', e => {
-            //     console.log('移除事件touchend');
-            // });
-            // cancelAnimationFrame(this.dataStore.get('timer'));
-            // this.dataStore.destroy();
-            
-            // // 先设置cavas标签高宽
-            // var canvas = document.getElementById("game_canvas");
-            // canvas.setAttribute('width',window.innerWidth);
-            // canvas.setAttribute('height',window.innerHeight);
-
-            // new Main();
         }
     }
 
@@ -256,12 +263,16 @@ export class Director {
             steps.shift();
         }
         if(steps[steps.length-1].y < (this.dataStore.win.innerHeight - 160)){
+            //增加台阶个数
+            this.dataStore.stepNum = this.dataStore.stepNum + 1;
             this.createStep();
         }
-        //console.log(this.dataStore.get('ball'));
 
         // 画出小球
         this.dataStore.get('ball').draw();
+
+        // 画出计分器
+        this.dataStore.get('score').draw();
 
         // 画出开始按钮
         this.dataStore.get('startBtn').draw();
@@ -274,9 +285,5 @@ export class Director {
         }
         let timer = requestAnimationFrame(()=> this.run());
         this.dataStore.put('timer', timer);
-        /*else {
-            cancelAnimationFrame(this.dataStore.get('timer'));
-            this.dataStore.destroy();
-        }*/
     }
 }

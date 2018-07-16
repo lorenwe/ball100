@@ -1,16 +1,16 @@
 //台阶类
 import {Sprite} from "../base/Sprite.js";
-// import {DataStore} from "../base/DataStore.js";
 import {Director} from "../Director.js";
 
 export class Step extends Sprite{
-    constructor(stepX = 0, stepY = 0) {
+    constructor(stepX = 0, stepY = 0, stepNum = 0) {
         const image = Sprite.getImage('step');
         super(image,
             0, 0,
             image.width,image.height,
             stepX, stepY,
             image.width,image.height);
+        this.stepNum = stepNum;
     }
 
     draw(){

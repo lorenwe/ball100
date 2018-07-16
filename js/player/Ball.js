@@ -5,13 +5,18 @@ import {DataStore} from "../base/DataStore.js";
 
 export class Ball extends Sprite {
     constructor(stepX = 0, stepY = 0) {
-        const image = Sprite.getImage('ball');
-        super(image,
+        // const image = Sprite.getImage('ball');
+        // 获取离屏canvas小球
+        let ballCanvas = DataStore.getInstance().ballCanvas;
+        let offCanvas = ballCanvas.rotate(0);
+
+        super(offCanvas,
             0, 0,
-            image.width,image.height,
+            ballCanvas.offCanvas.width,ballCanvas.offCanvas.height,
             stepX, stepY,
-            image.width,image.height);
+            ballCanvas.offCanvas.width,ballCanvas.offCanvas.height);
         this.time = 0;
+        this.ballCanvas = ballCanvas;
     }
 
     draw(){
@@ -64,12 +69,25 @@ export class Ball extends Sprite {
             this.y = oldCoordinate.y;
         }
 
-        super.draw(this.img,
+        // 旋转
+        let s = oldCoordinate.x - this.x;
+        let angle = s / (Math.PI * Director.getInstance().ballSize) * 360 * -1;
+        let offCanvas = this.ballRotate(angle);
+
+        super.draw(offCanvas,
             this.srcX,this.srcY,
             this.img.width,this.img.height,
             this.x,this.y,
-            Director.getInstance().ballSize,Director.getInstance().ballSize)
+            Director.getInstance().ballSize,Director.getInstance().ballSize);
+
+
     }
+
+    // 小球旋转
+    ballRotate(angle = 0) {
+        return this.ballCanvas.rotate(angle);
+    }
+
 
     // 检测小球是否在台阶上
     checkBallByStep() {
@@ -87,9 +105,9 @@ export class Ball extends Sprite {
             const step = steps[i];
             const stepBorder = {
                 top: step.y,
-                bottom: step.y + step.height,
+                bottom: step.y + Director.getInstance().stepHeight,
                 left: step.x,
-                right: step.x + step.width
+                right: step.x + Director.getInstance().stepWidth
             };
             if(ballBorder.top > stepBorder.bottom) {
                 //console.log('小球top',ballBorder.top);
@@ -100,6 +118,8 @@ export class Ball extends Sprite {
             if(ballStatus.status){
                 DataStore.getInstance().ballSpeed.y = Director.getInstance().stepSpeed;
                 DataStore.getInstance().get('ball').time = 0;
+                DataStore.getInstance().score = step.stepNum * 2;
+                //console.log(step.stepNum);
                 return ballStatus;
             } else {
                 DataStore.getInstance().ballSpeed.y = 0;
@@ -127,8 +147,8 @@ export class Ball extends Sprite {
             };
             return s;
         } else {
-            //                            右边台阶检查偏差值        左边台阶检查偏差值
-            if (  ball.left <= step.right - 4 && ball.right >=  step.left + 6) {
+            //                             右边台阶检查偏差值                                                     左边台阶检查偏差值
+            if (ball.left <= (step.right - DataStore.getInstance().rightStepCeil) && ball.right >=  step.left + DataStore.getInstance().leftStepCeil) {
                 s = {
                     status: true,
                     ballY: step.top
